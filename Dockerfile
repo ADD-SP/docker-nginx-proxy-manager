@@ -55,8 +55,8 @@ RUN \
     rm -rf /tmp/* /tmp/.[!.]*
 
 # Build and install OpenResty (nginx).
-RUN \
-    add-pkg --virtual build-dependencies \
+RUN  add-pkg --virtual build-dependencies \
+        git \
         build-base \
         curl \
         linux-headers \
@@ -64,6 +64,9 @@ RUN \
         pcre-dev \
         openssl-dev \
         zlib-dev \
+        libsodium-dev \
+        libsodium \
+        uthash-dev \
         && \
     # Set same default compilation flags as abuild.
     export CFLAGS="-Os -fomit-frame-pointer" && \
@@ -74,6 +77,9 @@ RUN \
     echo "Downloading OpenResty..." && \
     mkdir openresty && \
     curl -# -L ${OPENRESTY_URL} | tar xz --strip 1 -C openresty && \
+    echo "Downloading ngx_waf module" && \
+    git clone https://github.com/ADD-SP/ngx_waf.git && \
+    (cd ngx_waf && git clone https://github.com/client9/libinjection.git inc/libinjection) && \
     echo "Downloading GeoIP2 module..." && \
     mkdir ngx_http_geoip2_module && \
     curl -# -L ${NGINX_HTTP_GEOIP2_MODULE_URL} | tar xz --strip 1 -C ngx_http_geoip2_module && \
@@ -139,6 +145,7 @@ RUN \
         --with-pcre-jit \
         \
         --add-module=/tmp/ngx_http_geoip2_module \
+        --add-module=/tmp/ngx_waf \
         && \
     make -j$(nproc) && \
     # Install.
